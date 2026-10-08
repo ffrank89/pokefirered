@@ -40,6 +40,7 @@ uv run python -m unittest discover -s python/tests -v
 ```
 
 The [`python/`](python/README.md) folder contains Python ports of game systems, starting with wild
-encounters (`src/wild_encounter.c`), along with a simulator and tests that check the port against the C code.
+encounters (`src/wild_encounter.c`), along with a simulator and tests that check the port against the C code. See
+[PYTHON_PORT.md](PYTHON_PORT.md) for a summary of the port and an example of changing encounter behavior.
 
 For contacts and other pret projects, see [pret.github.io](https://pret.github.io/).
