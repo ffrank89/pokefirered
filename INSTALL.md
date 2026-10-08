@@ -2,6 +2,11 @@
 
 These instructions explain how to set up the tools required to build **pokefirered**, which assembles the source files into a ROM.
 
+> **Note:** The project's own build tools (in `tools/`) are now Python scripts, so **libpng is no longer needed**,
+> but **Python 3.8 or newer** is (most systems already have it; check with `python3 --version`). You can skip
+> the libpng steps below. After installing the ARM toolchain and agbcc, you can build with `python3 build.py`
+> (see [README.md](README.md)); `make` works as before.
+
 These instructions come with notes which can be expanded by clicking the "<i>Note...</i>" text.
 In general, you should not need to open these unless if you get an error or if you need additional clarification.
 

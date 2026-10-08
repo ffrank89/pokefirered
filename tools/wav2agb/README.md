@@ -1,5 +1,5 @@
 # wav2agb
-"wav2agb" is a tool to convert standard .wav files to GBA compatible .s or .bin files.  Intended to convert .wav files for the use with the mp2k/m4a sound driver.
+"wav2agb" (`wav2agb.py`, a Python port of the original C++ tool) is a tool to convert standard .wav files to GBA compatible .s or .bin files.  Intended to convert .wav files for the use with the mp2k/m4a sound driver.
 
 This copy has been slightly modified from [ipatix's original implementation](https://github.com/ipatix/wav2agb) in the following ways:
 1. Support outputting `.bin` files with a command line option `-b, --binary`. (The original only supports outputting `.s` assembly files.)

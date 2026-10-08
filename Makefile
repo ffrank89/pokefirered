@@ -106,16 +106,16 @@ endif
 # Variable filled out in other make files
 AUTO_GEN_TARGETS :=
 include make_tools.mk
-# Tool executables
-GFX       := $(TOOLS_DIR)/gbagfx/gbagfx$(EXE)
-WAV2AGB   := $(TOOLS_DIR)/wav2agb/wav2agb$(EXE)
-MID       := $(TOOLS_DIR)/mid2agb/mid2agb$(EXE)
-SCANINC   := $(TOOLS_DIR)/scaninc/scaninc$(EXE)
-PREPROC   := $(TOOLS_DIR)/preproc/preproc$(EXE)
-RAMSCRGEN := $(TOOLS_DIR)/ramscrgen/ramscrgen$(EXE)
-FIX       := $(TOOLS_DIR)/gbafix/gbafix$(EXE)
-MAPJSON   := $(TOOLS_DIR)/mapjson/mapjson$(EXE)
-JSONPROC  := $(TOOLS_DIR)/jsonproc/jsonproc$(EXE)
+# Tools (Python scripts in the tools folder)
+GFX       := $(PYTHON) $(TOOLS_DIR)/gbagfx/gbagfx.py
+WAV2AGB   := $(PYTHON) $(TOOLS_DIR)/wav2agb/wav2agb.py
+MID       := $(PYTHON) $(TOOLS_DIR)/mid2agb/mid2agb.py
+SCANINC   := $(PYTHON) $(TOOLS_DIR)/scaninc/scaninc.py
+PREPROC   := $(PYTHON) $(TOOLS_DIR)/preproc/preproc.py
+RAMSCRGEN := $(PYTHON) $(TOOLS_DIR)/ramscrgen/ramscrgen.py
+FIX       := $(PYTHON) $(TOOLS_DIR)/gbafix/gbafix.py
+MAPJSON   := $(PYTHON) $(TOOLS_DIR)/mapjson/mapjson.py
+JSONPROC  := $(PYTHON) $(TOOLS_DIR)/jsonproc/jsonproc.py
 
 PERL := perl
 SHA1 := $(shell { command -v sha1sum || command -v shasum; } 2>/dev/null) -c
@@ -140,7 +140,7 @@ infoshell = $(foreach line, $(shell $1 | sed "s/ /__SPACE__/g"), $(info $(subst 
 
 # Check if we need to scan dependencies based on the chosen rule OR user preference
 NODEP ?= 0
-# Check if we need to pre-build tools and generate assets based on the chosen rule.
+# Check if we need to check the tools and generate assets based on the chosen rule.
 SETUP_PREREQS ?= 1
 # Disable dependency scanning for rules that don't need it.
 ifneq (,$(MAKECMDGOALS))
@@ -154,10 +154,10 @@ endif
 
 ifeq ($(SETUP_PREREQS),1)
   # If set on: Default target or a rule requiring a scan
-  # Forcibly execute `make tools` since we need them for what we are doing.
-  $(foreach line, $(shell $(MAKE) -f make_tools.mk | sed "s/ /__SPACE__/g"), $(info $(subst __SPACE__, ,$(line))))
+  # Forcibly execute `make tools` to check that Python can run the tools.
+  $(foreach line, $(shell $(MAKE) -f make_tools.mk 2>&1 | sed "s/ /__SPACE__/g"), $(info $(subst __SPACE__, ,$(line))))
   ifneq ($(.SHELLSTATUS),0)
-    $(error Errors occurred while building tools. See error messages above for more details)
+    $(error Errors occurred while checking tools. See error messages above for more details)
   endif
   # Oh and also generate mapjson sources before we use `SCANINC`.
   $(foreach line, $(shell $(MAKE) generated | sed "s/ /__SPACE__/g"), $(info $(subst __SPACE__, ,$(line))))
