@@ -247,6 +247,7 @@ include tileset_rules.mk
 include map_data_rules.mk
 include spritesheet_rules.mk
 include json_data_rules.mk
+include python_src_rules.mk
 include audio_rules.mk
 
 # NOTE: Tools must have been built prior (FIXME)

@@ -32,15 +32,19 @@ uv run build.py --clean            # remove build outputs
 To play the game, open the built ROM (e.g. `pokefirered.gba`) in a GBA emulator such as
 [mGBA](https://mgba.io/).
 
-To run the Python port of wild encounters and its tests:
+## Game code in Python
+
+The wild encounter code is written in Python: [`src/wild_encounter.py`](src/wild_encounter.py). The build
+translates it to C, which is compiled into the ROM, so editing it changes the game. It uses a
+C-flavored dialect of Python described in [`python/gba/__init__.py`](python/gba/__init__.py).
 
 ```bash
-uv run python/simulate_encounters.py --map MAP_ROUTE1
-uv run python -m unittest discover -s python/tests -v
+uv run build.py                                         # build the ROM (includes the Python code)
+uv run python/simulate_encounters.py --map MAP_ROUTE1   # run the same code on your PC
+uv run python -m unittest discover -s python/tests -v   # check the PC and ROM versions agree
 ```
 
-The [`python/`](python/README.md) folder contains Python ports of game systems, starting with wild
-encounters (`src/wild_encounter.c`), along with a simulator and tests that check the port against the C code. See
-[PYTHON_PORT.md](PYTHON_PORT.md) for a summary of the port and an example of changing encounter behavior.
+See [PYTHON_PORT.md](PYTHON_PORT.md) for how it works, a summary of everything that has been ported,
+and a step-by-step example of changing the game in Python.
 
 For contacts and other pret projects, see [pret.github.io](https://pret.github.io/).

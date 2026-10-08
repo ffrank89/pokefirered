@@ -1,134 +1,158 @@
-# Python port: summary
+# Writing game code in Python
+
+## How it works
+
+```
+src/wild_encounter.py ──tools/py2c──▶ src/wild_encounter.c ──agbcc──▶ machine code ──▶ pokefirered.gba
+        │
+        └──gba.runtime──▶ runs on your PC (simulator and tests)
+```
+
+- `src/wild_encounter.py` is the source of the game's wild encounter code. The ROM gets its wild
+  encounters from it, so **editing this file changes the game**.
+- The build translates it to C with `tools/py2c/py2c.py`. The GBA's compiler (agbcc) then turns that
+  C into machine code like every other C file. `src/wild_encounter.c` is a generated file (ignored by
+  git); open it to see the C your Python became.
+- The file is written in the **gba dialect** of Python: normal Python syntax with C's rules. Variables
+  have fixed-size types like `u8` (0–255), there are pointers and structs, and there are no lists or
+  dicts inside functions. The cheat sheet is at the top of [`python/gba/__init__.py`](python/gba/__init__.py).
+- The same file also runs on your PC through `gba.runtime`, which gives it C's integer behaviour.
+  `python/simulate_encounters.py` and the tests use it this way, so they always run the code that is
+  in the game.
 
 ## What has been done
 
-- **Scope.** The game's C code in `src/` still builds the ROM, because a GBA ROM has to be compiled
-  from C (or assembly). The Python work replaces the project's build tooling and adds Python versions of
-  game systems that run alongside the C code.
-- **All 11 build tools in `tools/` are now Python**: `gbagfx`, `preproc`, `scaninc`, `mapjson`,
+- **Scope.** The game is a decompilation of Pokémon FireRed/LeafGreen into C. Python can't run on a GBA,
+  so Python reaches the ROM by being translated into C at build time.
+- **All 11 build tools in `tools/` are Python**: `gbagfx`, `preproc`, `scaninc`, `mapjson`,
   `jsonproc` (including a port of the Inja template engine), `mid2agb`, `wav2agb`, `ramscrgen`,
-  `gbafix`, `bin2c` and `rsfont`. Their C/C++ sources and `build_tools.sh` were removed (they remain in
-  git history).
-- **Every tool was checked against the original C binary** before the switch. The checks covered about
-  9,900 graphics conversions, all 347 songs, all 477 sound samples, all 425 maps, every C and assembly
-  file through `preproc` and `scaninc`, and all JSON templates. All outputs were byte-identical.
-  The one exception is the order of `#include` lines in `data/maps/connections.inc`, which the C tool
-  left to the C++ standard library's unstable sort. The affected includes all point at empty files, so
-  the ROM is unaffected.
-- **The Makefile runs the Python tools** through `$(PYTHON)` (default `python3`), and `make tools` now
-  just checks the Python version. libpng is no longer required.
-- **All six ROMs still match the originals.** Built with the Python tools, `pokefirered.gba` and
-  `pokeleafgreen.gba` match the original SHA1s in rev 0, rev 1 and the Switch releases.
-- **`build.py` is a single entry point** for building. It checks the toolchain, can download and
-  build agbcc (`--install-agbcc`), runs `make` and verifies the ROM's SHA1. It runs with
-  `uv run build.py` or `python3 build.py`.
-- **Wild encounters were ported to Python** in `python/pokefirered/`:
-  - `wild_encounter.py` is a line-by-line port of `src/wild_encounter.c`, covering grass and water
-    steps, Sweet Scent, Rock Smash, fishing, repels, flutes, Cleanse Tag, Stench and Illuminate,
-    roamers, Altering Cave and Tanoby Unown.
-  - `rng.py` ports the game's random number generator (`src/random.c`).
-  - `pokemon.py` ports the parts of `src/pokemon.c` that use random numbers when a wild Pokémon is
-    created (personality, nature and IVs), plus gender, ability, shininess and Unown letter.
-  - `constants.py` reads map, species, flag, var, item and ability values from the C headers and JSON.
-  - Encounter tables are read from `src/data/wild_encounters.json`, the same file the C build uses, so
-    a data edit changes both.
-- **The port is checked against the real C code.** `python/tests` compiles the original
-  `wild_encounter.c` for the host machine with small stand-ins for the rest of the game, then runs random
-  scenarios through both versions for FireRed and LeafGreen. Across 647,272 calls, every return
-  value, random number, encounter-state field and generated Pokémon matched. The tests also check the
-  Python tables against the generated C header.
-- **`python/simulate_encounters.py`** simulates walking, surfing, biking, Sweet Scent, Rock Smash and
-  each fishing rod on any map, and prints each encounter or a species distribution.
-- **Documentation** covers `uv` usage in `README.md`, the Python package in `python/README.md`, and a
-  note in `INSTALL.md` that libpng is no longer needed.
-- **Supporting changes:** `.gitignore` ignores `__pycache__/`, and the VS Code launch and task configs
-  are kept in `.vscode/`.
-- Everything is committed on the **`python-port`** branch.
+  `gbafix`, `bin2c` and `rsfont`. Each one was checked byte-for-byte against the original C tool before
+  it replaced it. That covered about 9,900 graphics conversions, all 347 songs, all 477 sound samples,
+  all 425 maps, every source file and all JSON templates. The original C/C++ sources were removed (they
+  remain in git history), and libpng is no longer needed.
+- **`build.py` is a single entry point** for building. It checks the toolchain, can install the agbcc
+  compiler, runs `make` and verifies the ROM's SHA1. It runs with `uv run build.py`.
+- **The gba dialect and translator.** The `python/gba` package defines the dialect: C types (`u8`,
+  `Ptr[...]`, `Struct`...), `switch`, `define`, `include` and so on. `tools/py2c/py2c.py` turns dialect
+  files into C, keeping the comments, and reports dialect mistakes (such as an undeclared variable or
+  `/` instead of `//`) with line numbers.
+- **Wild encounters are written in Python.** `src/wild_encounter.c` was rewritten as
+  `src/wild_encounter.py`, and the Makefile generates the C from it (`python_src_rules.mk`).
+- **The generated C compiles to the same machine code as the original.** agbcc's assembly output for
+  the original and the generated `wild_encounter.c` is identical, apart from internal label numbers.
+  All six ROMs (FireRed and LeafGreen, rev 0, rev 1 and Switch) still match the original SHA1s.
+- **`gba.runtime` runs dialect files on a PC.** It provides working versions of the game functions
+  the code calls (`Random`, `CreateMon`, `VarGet`...) and the game state they use.
+- **Tests check that the PC version behaves like the ROM version.** `python/tests` translates
+  `src/wild_encounter.py` to C, compiles that C for your computer, and runs random scenarios through
+  both. Across 647,508 calls, every result, random number and generated Pokémon matched.
+- **`python/simulate_encounters.py`** runs the encounter code to show what you'd find on any map
+  (walking, surfing, Sweet Scent, Rock Smash, each fishing rod).
+- **Documentation:** `README.md` (building with `uv`), `python/README.md`, and this file.
+- Everything is on the **`python-port`** branch.
 
 ## Example: making every wild Pokémon shiny
 
-A Pokémon is shiny when its personality value combines with the player's trainer ID to give a "shiny
-value" below 8, which happens about 1 time in 8,192. Personality is rolled when the wild Pokémon is
-created, so the change goes in `_generate_wild_mon` in
-[`python/pokefirered/wild_encounter.py`](python/pokefirered/wild_encounter.py): keep rolling until the
-personality is shiny.
+A Pokémon is shiny when its personality value, combined with the player's trainer ID, gives a "shiny
+value" below 8. That normally happens 1 time in 8,192. The personality is rolled in `GenerateWildMon`
+in [`src/wild_encounter.py`](src/wild_encounter.py), which calls `CreateMonWithNature`. To force
+shininess, roll the personality ourselves until it has the chosen nature **and** is shiny.
 
-1. Import the two helpers this needs:
-
-   ```diff
-    from .pokemon import (Pokemon, create_mon, create_mon_with_nature, get_unown_letter,
-   -                      NUM_NATURES)
-   +                      get_nature_from_personality, is_shiny, NUM_NATURES)
-   ```
-
-2. In `_generate_wild_mon`, keep rolling a personality until it has the chosen nature **and** is shiny:
+1. Add the header that declares `GetPlayerTrainerId`, next to the other includes:
 
    ```diff
-            if species != "SPECIES_UNOWN":
-                nature = self._random() % NUM_NATURES
-   -            mon = create_mon_with_nature(state.rng, species, level, nature, state.player_trainer_id)
-   +            # Keep rolling personalities until one has the chosen nature AND is shiny.
-   +            while True:
-   +                personality = state.rng.random32()
-   +                if (get_nature_from_personality(personality) == nature
-   +                        and is_shiny(state.player_trainer_id, personality)):
-   +                    break
-   +            mon = create_mon(state.rng, species, level, personality, state.player_trainer_id)
+    include("constants/items.h")
+   +include("field_specials.h")
    ```
 
-3. For Unown, which pick their personality by letter, add the same condition in
-   `_generate_unown_personality_by_letter`:
+2. Change `GenerateWildMon`:
 
    ```diff
-   -            if get_unown_letter(personality) == letter:
-   +            if get_unown_letter(personality) == letter and is_shiny(self.state.player_trainer_id, personality):
-                    return personality
+        ZeroEnemyPartyMons()
+        if species != SPECIES_UNOWN:
+   -        CreateMonWithNature(addr(gEnemyParty[0]), species, level, USE_RANDOM_IVS, Random() % NUM_NATURES)
+   +        nature: u8 = Random() % NUM_NATURES
+   +        otId: u32 = GetPlayerTrainerId()
+   +
+   +        # Keep rolling personalities until one has the chosen nature AND is shiny.
+   +        while True:
+   +            personality = Random32()
+   +            if personality % NUM_NATURES == nature and GET_SHINY_VALUE(otId, personality) < SHINY_ODDS:
+   +                break
+   +        CreateMon(addr(gEnemyParty[0]), species, level, USE_RANDOM_IVS, TRUE, personality, OT_ID_PLAYER_ID, 0)
    ```
 
-Try it:
+   Note the dialect rules at work. `nature` and `otId` are declared with types at the top of their
+   block, as C requires. `while True: ... if ...: break` is how the dialect writes C's
+   `do { } while` loop.
 
-```bash
-uv run python/simulate_encounters.py --map MAP_ROUTE1 --steps 150
-```
+3. Unown pick their personality by letter in `GenerateUnownPersonalityByLetter`, so add the same
+   condition there:
 
-```
-step 115     wild battle: PIDGEY Lv5 DOCILE female, IVs 27/6/24/15/14/28, SHINY
-step 122     wild battle: PIDGEY Lv3 RASH female, IVs 14/22/9/28/6/5, SHINY
-step 130     wild battle: RATTATA Lv2 TIMID female, IVs 20/14/31/20/23/16, SHINY
-```
+   ```diff
+   -        if GetUnownLetterByPersonalityLoByte(personality) == letter:
+   +        if (GetUnownLetterByPersonalityLoByte(personality) == letter
+   +                and GET_SHINY_VALUE(GetPlayerTrainerId(), personality) < SHINY_ODDS):
+                break
+   ```
 
-### What this does and doesn't change
+4. Build the ROM. Use `--no-compare`, because the ROM no longer matches the original game:
 
-- **It changes the Python simulation, not the game.** The ROM is still built from
-  `src/wild_encounter.c`, so encounters in an emulator are unaffected.
-- **Two tests will fail.** The C-comparison tests in `python/tests` check that the Python behaves
-  exactly like the C code, and after this change it deliberately doesn't. Use that as a reminder to
-  make the same change in C, then the tests pass again. Changing only the Python is fine for a
-  "what if" experiment, but then the comparison tests are expected to fail.
-- **To change the game itself**, make the equivalent edit in `GenerateWildMon` in
-  `src/wild_encounter.c` (and add `#include "field_specials.h"` for `GetPlayerTrainerId`):
+   ```bash
+   uv run build.py --no-compare
+   ```
 
-  ```diff
+   `src/wild_encounter.c` now contains the C version of your change:
+
+   ```c
        if (species != SPECIES_UNOWN)
        {
-  -        CreateMonWithNature(&gEnemyParty[0], species, level, USE_RANDOM_IVS, Random() % NUM_NATURES);
-  +        u8 nature = Random() % NUM_NATURES;
-  +        u32 otId = GetPlayerTrainerId();
-  +        do
-  +        {
-  +            personality = Random32();
-  +        } while (personality % NUM_NATURES != nature || GET_SHINY_VALUE(otId, personality) >= SHINY_ODDS);
-  +        CreateMon(&gEnemyParty[0], species, level, USE_RANDOM_IVS, TRUE, personality, OT_ID_PLAYER_ID, 0);
+           u8 nature = Random() % NUM_NATURES;
+           u32 otId = GetPlayerTrainerId();
+
+           // Keep rolling personalities until one has the chosen nature AND is shiny.
+           do
+           {
+               personality = Random32();
+           } while (!(personality % NUM_NATURES == nature && GET_SHINY_VALUE(otId, personality) < SHINY_ODDS));
+           CreateMon(&gEnemyParty[0], species, level, USE_RANDOM_IVS, TRUE, personality, OT_ID_PLAYER_ID, 0);
        }
-  ```
+   ```
 
-  Then rebuild with `uv run build.py --no-compare`. The ROM will no longer match the original game, so
-  skip the SHA1 check. This C change was test-compiled with agbcc.
+   Load `pokefirered.gba` into an emulator such as [mGBA](https://mgba.io/), and every wild Pokémon will
+   be shiny.
 
-Two kinds of change work differently:
+5. Try it on your PC as well. The simulator runs the same edited file:
 
-- **Data changes**, such as which species appear, their level ranges, slot odds and encounter rates,
-  go in `src/data/wild_encounters.json`. Both the Python port and the ROM read that file, so one edit
-  updates both and the tests keep passing.
-- **Logic changes**, such as the shiny example, are code. Try them quickly in Python with the
-  simulator, then mirror them in `src/wild_encounter.c` when you want them in the game.
+   ```bash
+   uv run python/simulate_encounters.py --map MAP_ROUTE1 --steps 120
+   ```
+
+   ```
+   step 120     wild battle: PIDGEY Lv3 RASH male, IVs 30/23/27/8/26/9, SHINY
+   ```
+
+   The tests still pass, because they check that the PC version and the ROM version of your code
+   agree, not that the code matches the original game.
+
+This example was applied, built and run while writing this guide. The build produced a ROM with a
+different SHA1, every simulated encounter was shiny, and the tests passed. It was then reverted.
+It was not played in an emulator.
+
+## Things to know
+
+- **Data vs. code.** Which species appear, their level ranges and the encounter rates live in
+  `src/data/wild_encounters.json`, not in code. Edit that file for those changes.
+- **Calling other parts of the game.** `src/wild_encounter.py` can call any C function or macro in the
+  game, as long as it's declared in [`python/gba/game.py`](python/gba/game.py) (so the translator
+  knows its type). To also use it in the simulator and tests, implement it in
+  [`python/gba/runtime.py`](python/gba/runtime.py) and add a stand-in to
+  `python/tests/c_harness/harness.c`. `GetPlayerTrainerId` and `GET_SHINY_VALUE` were added this way
+  for the shiny example.
+- **Only wild encounters are in Python so far.** The rest of the game is still C. Another C file can
+  be ported the same way: write `src/<name>.py` in the dialect, delete `src/<name>.c`, and add
+  `src/<name>.c` to `.gitignore`. Check the result by building the ROM and confirming the SHA1 still
+  matches before changing behaviour.
+- **What the dialect doesn't support yet.** Pointer arithmetic, `goto`, function pointers, unions and
+  `#ifdef` aren't supported, because wild encounters don't use them. Other C files may need the
+  translator extended.

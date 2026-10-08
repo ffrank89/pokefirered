@@ -1,4 +1,5 @@
-// Test harness that runs the real src/wild_encounter.c on the host machine.
+// Test harness that runs src/wild_encounter.c (the C generated from
+// src/wild_encounter.py) on the host machine.
 //
 // The C file is #included directly so that its static data
 // (sWildEncounterData) can be printed after every call. The functions it
@@ -9,13 +10,16 @@
 //
 // Commands are read from stdin, one per line, and every "call" prints a line
 // describing the result and the resulting state. tests/test_wild_encounter.py
-// runs the Python port with the same commands and compares the output.
+// runs src/wild_encounter.py with the same commands and compares the output.
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-#include "../../../src/wild_encounter.c"
+#ifndef WILD_ENCOUNTER_C
+#define WILD_ENCOUNTER_C "../../../src/wild_encounter.c"
+#endif
+#include WILD_ENCOUNTER_C
 
 // ---------------------------------------------------------------------------
 // Globals the C file uses
@@ -125,6 +129,11 @@ bool8 TestPlayerAvatarFlags(u8 flags)
 bool8 MetatileBehavior_IsBridge(u8 metatileBehavior)
 {
     return FALSE;
+}
+
+u32 GetPlayerTrainerId(void)
+{
+    return sTrainerId;
 }
 
 bool32 InUnionRoom(void)

@@ -1,10 +1,6 @@
-"""Python ports of pokefirered game systems.
-
-The C sources in src/ remain the code that is compiled into the ROM. The
-modules in this package are Python ports of individual game systems that read
-the same data files as the C build, so they can be used for tools, simulations
-and tests without a GBA toolchain.
-"""
+"""Helpers for PC-side Python tools: repository paths, constants read from the
+C headers, and Pokemon data. Game code itself lives in src/*.py (see the gba
+package)."""
 
 import os
 

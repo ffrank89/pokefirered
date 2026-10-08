@@ -20,10 +20,31 @@ class Constants:
 
     def add_header(self, header):
         with open(repo_path(header), encoding="utf-8") as f:
-            for line in f:
-                m = _DEFINE_RE.match(line)
-                if m:
-                    self._exprs[m.group(1)] = m.group(2)
+            text = f.read()
+        for line in text.splitlines():
+            m = _DEFINE_RE.match(line)
+            if m:
+                self._exprs[m.group(1)] = m.group(2)
+        # enum { A, B = 5, C, ... };
+        code = re.sub(r"//[^\n]*|/\*.*?\*/", "", text, flags=re.S)
+        for body in re.findall(r"\benum\s*\w*\s*\{(.*?)\}", code, re.S):
+            previous = None
+            for entry in body.split(","):
+                entry = entry.strip()
+                if not entry:
+                    continue
+                name, _, value = entry.partition("=")
+                name = name.strip()
+                if not re.match(r"^[A-Za-z_]\w*$", name):
+                    continue
+                if value.strip():
+                    expr = value.strip()
+                elif previous is None:
+                    expr = "0"
+                else:
+                    expr = "(%s) + 1" % previous
+                self._exprs.setdefault(name, expr)
+                previous = name
 
     def names(self, prefix=""):
         return [name for name in self._exprs if name.startswith(prefix)]
