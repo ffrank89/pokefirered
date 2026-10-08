@@ -19,6 +19,8 @@ src/wild_encounter.py ──tools/py2c──▶ src/wild_encounter.c ──agbcc
 - The same file also runs on your PC through `gba.runtime`, which gives it C's integer behaviour.
   `python/simulate_encounters.py` and the tests use it this way, so they always run the code that is
   in the game.
+- **To start making changes**, read [PYTHON_RULES.md](PYTHON_RULES.md): the dialect rules explained for
+  Python programmers, with a first change you can make in five minutes.
 
 ## What has been done
 

@@ -44,7 +44,8 @@ uv run python/simulate_encounters.py --map MAP_ROUTE1   # run the same code on y
 uv run python -m unittest discover -s python/tests -v   # check the PC and ROM versions agree
 ```
 
-See [PYTHON_PORT.md](PYTHON_PORT.md) for how it works, a summary of everything that has been ported,
+New to it? Start with [PYTHON_RULES.md](PYTHON_RULES.md): the rules for writing game code in Python and a
+5-minute first change. See [PYTHON_PORT.md](PYTHON_PORT.md) for how it works, a summary of everything that has been ported,
 and a step-by-step example of changing the game in Python.
 
 For contacts and other pret projects, see [pret.github.io](https://pret.github.io/).
