@@ -13,4 +13,39 @@ It builds the following ROM images:
 
 To set up the repository, see [INSTALL.md](INSTALL.md).
 
+## Building with Python
+
+The build tools in `tools/` (graphics, audio, map and text converters) are Python scripts, so the only
+external requirements are [uv](https://docs.astral.sh/uv/) (or Python 3.8+), `make`, an ARM binutils
+toolchain (devkitARM or `arm-none-eabi-*`) and the agbcc compiler.
+
+From the repository root:
+
+```bash
+uv run build.py --check            # report anything that is missing
+uv run build.py --install-agbcc    # download and build agbcc into tools/agbcc (first time only)
+uv run build.py                    # build pokefirered.gba and check it matches the original
+uv run build.py --game leafgreen   # other versions: --rev 1, --rev switch
+uv run build.py --clean            # remove build outputs
+```
+
+To play the game, open the built ROM (e.g. `pokefirered.gba`) in a GBA emulator such as
+[mGBA](https://mgba.io/).
+
+## Game code in Python
+
+The wild encounter code is written in Python: [`src/wild_encounter.py`](src/wild_encounter.py). The build
+translates it to C, which is compiled into the ROM, so editing it changes the game. It uses a
+C-flavored dialect of Python described in [`python/gba/__init__.py`](python/gba/__init__.py).
+
+```bash
+uv run build.py                                         # build the ROM (includes the Python code)
+uv run python/simulate_encounters.py --map MAP_ROUTE1   # run the same code on your PC
+uv run python -m unittest discover -s python/tests -v   # check the PC and ROM versions agree
+```
+
+New to it? Start with [PYTHON_RULES.md](PYTHON_RULES.md): the rules for writing game code in Python and a
+5-minute first change. See [PYTHON_PORT.md](PYTHON_PORT.md) for how it works, a summary of everything that has been ported,
+and a step-by-step example of changing the game in Python.
+
 For contacts and other pret projects, see [pret.github.io](https://pret.github.io/).

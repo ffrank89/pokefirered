@@ -1,0 +1,37 @@
+{
+    // Cmd/Ctrl+Shift+B runs the default build task.
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build ROM (FireRed)",
+            "type": "shell",
+            "command": "python3",
+            "args": ["build.py"],
+            "group": {"kind": "build", "isDefault": true},
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "Build ROM (LeafGreen)",
+            "type": "shell",
+            "command": "python3",
+            "args": ["build.py", "--game", "leafgreen"],
+            "group": "build",
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "Clean",
+            "type": "shell",
+            "command": "python3",
+            "args": ["build.py", "--clean"],
+            "problemMatcher": []
+        },
+        {
+            "label": "Test wild encounter port",
+            "type": "shell",
+            "command": "python3",
+            "args": ["-m", "unittest", "discover", "-s", "python/tests", "-v"],
+            "group": "test",
+            "problemMatcher": []
+        }
+    ]
+}

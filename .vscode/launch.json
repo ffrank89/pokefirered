@@ -1,0 +1,60 @@
+{
+    // Press F5 (or use Run and Debug) and pick one of these.
+    // Requires the Python extension (ms-python.python).
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Build ROM (FireRed)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/build.py",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Build ROM (LeafGreen)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/build.py",
+            "args": ["--game", "leafgreen"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Build ROM (FireRed, modern compiler)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/build.py",
+            "args": ["--modern"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Simulate wild encounters",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/python/simulate_encounters.py",
+            "args": ["--map", "${input:map}"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Test wild encounter port",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "unittest",
+            "args": ["discover", "-s", "python/tests", "-v"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "map",
+            "type": "promptString",
+            "description": "Map constant",
+            "default": "MAP_ROUTE1"
+        }
+    ]
+}
