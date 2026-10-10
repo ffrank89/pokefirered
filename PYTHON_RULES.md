@@ -201,6 +201,26 @@ Inside game code there are **no** lists, dicts, sets, tuples or strings. There a
 only has what the C code gives it. If you need a table of values, look at how `sUnownLetterSlots` is
 declared at the top level.
 
+### 9. The GBA is slow: don't wait for luck
+
+The GBA's processor runs at 16.8 MHz, hundreds of times slower than your computer, with no hardware
+for division. The game has to finish its work within each frame (1/60 of a second) or the screen
+freezes. The simulator runs your code on your PC, so **it won't show you that something is too slow.**
+
+The usual trap is a loop that keeps trying random numbers until something rare happens:
+
+```python
+# DON'T: shiny is 1 in 8,192, so this loops thousands of times and freezes the game
+while True:
+    personality = Random32()
+    if GET_SHINY_VALUE(otId, personality) < SHINY_ODDS:
+        break
+```
+
+Calculate the answer instead. See the shiny example in [PYTHON_PORT.md](PYTHON_PORT.md), which picks
+half of the value at random and works out the other half. A loop that succeeds 1 time in 25 (like
+matching a nature) is fine; 1 in thousands is not.
+
 ## Changing data instead of code
 
 You don't need code to change *which* Pokémon live where. The species, level ranges and encounter rates
